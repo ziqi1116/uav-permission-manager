@@ -52,5 +52,5 @@ module.exports = {
   /**
    * 底部版权文本内容
    */
-  footerContent: 'Copyright © 2018-2026 RuoYi. All Rights Reserved.'
+  footerContent: 'Copyright © 2018-2026 无人机飞行管理系统. All Rights Reserved.'
 }

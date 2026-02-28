@@ -1,0 +1,77 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.ruoyi.system.mapper.FlightStatisticsMapper">
+
+    <select id="selectApplicationCountByDate" resultType="map">
+        select date_format(create_time, '%Y-%m-%d') as dateStr, count(1) as count
+        from flight_application
+        <where>
+            <if test="applicantId != null">and applicant_id = #{applicantId}</if>
+            <if test="beginTime != null and beginTime != ''">
+                and date_format(create_time,'%Y-%m-%d') &gt;= #{beginTime}
+            </if>
+            <if test="endTime != null and endTime != ''">
+                and date_format(create_time,'%Y-%m-%d') &lt;= #{endTime}
+            </if>
+        </where>
+        group by date_format(create_time, '%Y-%m-%d')
+        order by dateStr
+    </select>
+
+    <select id="selectAreaUsage" resultType="map">
+        select status as name, count(1) as value
+        from flight_application
+        <where>
+            <if test="applicantId != null">and applicant_id = #{applicantId}</if>
+        </where>
+        group by status
+    </select>
+
+    <select id="selectViolationCountByDate" resultType="map">
+        select date_format(v.create_time, '%Y-%m-%d') as dateStr, count(1) as count
+        from violation_record v
+        join flight_permission p on v.permission_id = p.id
+        join flight_application a on p.application_id = a.id
+        <where>
+            <if test="applicantId != null">and a.applicant_id = #{applicantId}</if>
+            <if test="beginTime != null and beginTime != ''">
+                and date_format(v.create_time,'%Y-%m-%d') &gt;= #{beginTime}
+            </if>
+            <if test="endTime != null and endTime != ''">
+                and date_format(v.create_time,'%Y-%m-%d') &lt;= #{endTime}
+            </if>
+        </where>
+        group by date_format(v.create_time, '%Y-%m-%d')
+        order by dateStr
+    </select>
+
+    <!-- 今日申请数量（applicantId 非空时仅统计该申请人） -->
+    <select id="selectTodayApplicationCount" resultType="long">
+        select count(1) from flight_application
+        where date(create_time) = curdate()
+        <if test="applicantId != null">and applicant_id = #{applicantId}</if>
+    </select>
+    <!-- 今日审批通过数量 -->
+    <select id="selectTodayApprovedCount" resultType="long">
+        select count(1) from flight_application
+        where date(approve_time) = curdate() and status = '1'
+        <if test="applicantId != null">and applicant_id = #{applicantId}</if>
+    </select>
+    <!-- 当前有效飞行任务数量（applicantId 非空时仅统计该申请人的权限） -->
+    <select id="selectCurrentFlightCount" resultType="long">
+        select count(1) from flight_permission p
+        join flight_application a on p.application_id = a.id
+        where p.permission_status = '0'
+          and p.approved_start_time &lt;= now() and p.approved_end_time &gt;= now()
+        <if test="applicantId != null">and a.applicant_id = #{applicantId}</if>
+    </select>
+    <!-- 累计违规次数（applicantId 非空时仅统计该申请人权限下的违规） -->
+    <select id="selectTotalViolationCount" resultType="long">
+        select count(1) from violation_record v
+        join flight_permission p on v.permission_id = p.id
+        join flight_application a on p.application_id = a.id
+        <where>
+            <if test="applicantId != null">and a.applicant_id = #{applicantId}</if>
+        </where>
+    </select>
+</mapper>

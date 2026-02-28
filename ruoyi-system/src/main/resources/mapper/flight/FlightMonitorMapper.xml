@@ -1,0 +1,137 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.ruoyi.system.mapper.FlightMonitorMapper">
+
+    <resultMap type="com.ruoyi.system.domain.FlightMonitor" id="FlightMonitorResult">
+        <id     property="id"               column="id"               />
+        <result property="permissionId"    column="permission_id"    />
+        <result property="realTimeLocation" column="real_time_location" />
+        <result property="longitude"        column="longitude"        />
+        <result property="latitude"         column="latitude"         />
+        <result property="currentHeight"   column="current_height"  />
+        <result property="speed"            column="speed"            />
+        <result property="warningFlag"     column="warning_flag"    />
+        <result property="flightTime"      column="flight_time"     />
+        <result property="isViolation"     column="is_violation"     />
+        <result property="createBy"        column="create_by"        />
+        <result property="createTime"      column="create_time"      />
+        <result property="applicationNo"   column="application_no"   />
+    </resultMap>
+
+    <sql id="selectFlightMonitorVo">
+        select m.id, m.permission_id, m.real_time_location, m.longitude, m.latitude, m.current_height, m.speed,
+               m.warning_flag, m.flight_time, m.is_violation, m.create_by, m.create_time,
+               a.application_no
+        from flight_monitor m
+        left join flight_permission p on m.permission_id = p.id
+        left join flight_application a on p.application_id = a.id
+    </sql>
+
+    <select id="selectFlightMonitorById" parameterType="Long" resultMap="FlightMonitorResult">
+        <include refid="selectFlightMonitorVo"/>
+        where m.id = #{id}
+    </select>
+
+    <select id="selectFlightMonitorList" parameterType="com.ruoyi.system.domain.FlightMonitor" resultMap="FlightMonitorResult">
+        <include refid="selectFlightMonitorVo"/>
+        <where>
+            <if test="permissionId != null">
+                AND m.permission_id = #{permissionId}
+            </if>
+            <if test="warningFlag != null and warningFlag != ''">
+                AND m.warning_flag = #{warningFlag}
+            </if>
+            <if test="params.beginTime != null and params.beginTime != ''">
+                AND date_format(m.create_time,'%Y%m%d') &gt;= date_format(#{params.beginTime},'%Y%m%d')
+            </if>
+            <if test="params.endTime != null and params.endTime != ''">
+                AND date_format(m.create_time,'%Y%m%d') &lt;= date_format(#{params.endTime},'%Y%m%d')
+            </if>
+            <if test="params.applicantId != null">
+                AND a.applicant_id = #{params.applicantId}
+            </if>
+        </where>
+    </select>
+
+    <insert id="insertFlightMonitor" parameterType="com.ruoyi.system.domain.FlightMonitor" useGeneratedKeys="true" keyProperty="id">
+        insert into flight_monitor (permission_id, real_time_location, longitude, latitude, current_height, speed, warning_flag, flight_time, is_violation, create_by, create_time)
+        values (#{permissionId}, #{realTimeLocation}, #{longitude}, #{latitude}, #{currentHeight}, #{speed}, #{warningFlag}, #{flightTime}, #{isViolation}, #{createBy}, sysdate())
+    </insert>
+
+    <update id="updateFlightMonitor" parameterType="com.ruoyi.system.domain.FlightMonitor">
+        update flight_monitor
+        <set>
+            <if test="realTimeLocation != null">real_time_location = #{realTimeLocation},</if>
+            <if test="longitude != null">longitude = #{longitude},</if>
+            <if test="latitude != null">latitude = #{latitude},</if>
+            <if test="currentHeight != null">current_height = #{currentHeight},</if>
+            <if test="speed != null">speed = #{speed},</if>
+            <if test="warningFlag != null">warning_flag = #{warningFlag},</if>
+            <if test="flightTime != null">flight_time = #{flightTime},</if>
+            <if test="isViolation != null">is_violation = #{isViolation},</if>
+        </set>
+        where id = #{id}
+    </update>
+
+    <delete id="deleteFlightMonitorById" parameterType="Long">
+        delete from flight_monitor where id = #{id}
+    </delete>
+
+    <delete id="deleteFlightMonitorByIds" parameterType="Long">
+        delete from flight_monitor where id in
+        <foreach item="id" collection="array" open="(" separator="," close=")">
+            #{id}
+        </foreach>
+    </delete>
+
+    <!-- 当前飞行任务（有效权限 + 最新一条监控位置，用于地图） -->
+    <select id="selectCurrentTaskList" resultType="map">
+        select p.id as permissionId, a.application_no as applicationNo,
+               p.approved_area as approvedArea, p.approved_height as approvedHeight,
+               m.real_time_location as realTimeLocation, m.current_height as currentHeight,
+               m.warning_flag as warningFlag, p.approved_start_time as approvedStartTime,
+               p.approved_end_time as approvedEndTime
+        from flight_permission p
+        join flight_application a on p.application_id = a.id
+        join flight_monitor m on m.permission_id = p.id
+        where p.permission_status = '0'
+          and now() between p.approved_start_time and p.approved_end_time
+          and m.id = (select max(m2.id) from flight_monitor m2 where m2.permission_id = p.id)
+        order by p.id
+    </select>
+
+    <!-- 某权限的轨迹点（按时间，用于 polyline） -->
+    <select id="selectMonitorPointsByPermissionId" resultType="map">
+        select real_time_location as realTimeLocation, current_height as currentHeight,
+               warning_flag as warningFlag, create_time as createTime
+        from flight_monitor
+        where permission_id = #{permissionId}
+        order by create_time
+    </select>
+
+    <!-- 分页：正在执行的飞行任务列表（permission_id, drone_name, flight_area, permission_status）；非管理员可传 applicantId 仅查本人） -->
+    <select id="selectTaskListPage" resultType="map">
+        select p.id as permissionId, d.drone_name as droneName, p.approved_area as flightArea,
+               p.permission_status as permissionStatus, p.approved_start_time as approvedStartTime,
+               p.approved_end_time as approvedEndTime, a.application_no as applicationNo
+        from flight_permission p
+        join flight_application a on p.application_id = a.id
+        join drone_info d on a.drone_id = d.id
+        <where>
+            <if test="applicantId != null">AND a.applicant_id = #{applicantId}</if>
+            AND ((p.permission_status = '0' and now() between p.approved_start_time and p.approved_end_time)
+                 or exists (select 1 from flight_monitor m where m.permission_id = p.id))
+        </where>
+        order by p.id desc
+    </select>
+
+    <!-- 某权限轨迹：必须含 longitude、latitude，按 flight_time 升序，保证前端折线顺序正确 -->
+    <select id="selectTrackByPermissionId" resultType="map">
+        select longitude, latitude, speed,
+               flight_time as flightTime, is_violation as isViolation
+        from flight_monitor
+        where permission_id = #{permissionId}
+          and longitude is not null and latitude is not null
+        order by coalesce(flight_time, create_time) asc, create_time asc, id asc
+    </select>
+</mapper>

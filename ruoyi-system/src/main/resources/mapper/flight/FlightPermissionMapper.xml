@@ -1,0 +1,104 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.ruoyi.system.mapper.FlightPermissionMapper">
+
+    <resultMap type="com.ruoyi.system.domain.FlightPermission" id="FlightPermissionResult">
+        <id     property="id"                 column="id"                   />
+        <result property="applicationId"     column="application_id"      />
+        <result property="approvedArea"      column="approved_area"       />
+        <result property="approvedHeight"   column="approved_height"     />
+        <result property="approvedStartTime" column="approved_start_time" />
+        <result property="approvedEndTime"   column="approved_end_time"   />
+        <result property="permissionStatus"  column="permission_status"   />
+        <result property="createBy"          column="create_by"           />
+        <result property="createTime"        column="create_time"         />
+        <result property="updateBy"          column="update_by"           />
+        <result property="updateTime"        column="update_time"         />
+        <result property="remark"            column="remark"               />
+        <result property="applicationNo"     column="application_no"      />
+        <result property="applicantId"       column="applicant_id"        />
+        <result property="applicantName"     column="applicant_name"      />
+    </resultMap>
+
+    <sql id="selectFlightPermissionVo">
+        select p.id, p.application_id, p.approved_area, p.approved_height, p.approved_start_time, p.approved_end_time,
+               p.permission_status, p.create_by, p.create_time, p.update_by, p.update_time, p.remark,
+               a.application_no, a.applicant_id, u.nick_name as applicant_name
+        from flight_permission p
+        left join flight_application a on p.application_id = a.id
+        left join sys_user u on a.applicant_id = u.user_id
+    </sql>
+
+    <select id="selectApplicantIdByPermissionId" resultType="java.lang.Long">
+        select a.applicant_id from flight_permission p
+        join flight_application a on p.application_id = a.id
+        where p.id = #{permissionId} limit 1
+    </select>
+
+    <select id="selectFlightPermissionById" parameterType="Long" resultMap="FlightPermissionResult">
+        <include refid="selectFlightPermissionVo"/>
+        where p.id = #{id}
+    </select>
+
+    <select id="selectFlightPermissionList" parameterType="com.ruoyi.system.domain.FlightPermission" resultMap="FlightPermissionResult">
+        <include refid="selectFlightPermissionVo"/>
+        <where>
+            <if test="applicationId != null">
+                AND p.application_id = #{applicationId}
+            </if>
+            <if test="applicantId != null">
+                AND a.applicant_id = #{applicantId}
+            </if>
+            <if test="permissionStatus != null and permissionStatus != ''">
+                AND p.permission_status = #{permissionStatus}
+            </if>
+            <if test="params.beginTime != null and params.beginTime != ''">
+                AND date_format(p.create_time,'%Y%m%d') &gt;= date_format(#{params.beginTime},'%Y%m%d')
+            </if>
+            <if test="params.endTime != null and params.endTime != ''">
+                AND date_format(p.create_time,'%Y%m%d') &lt;= date_format(#{params.endTime},'%Y%m%d')
+            </if>
+        </where>
+    </select>
+
+    <select id="selectByApplicationId" parameterType="Long" resultMap="FlightPermissionResult">
+        <include refid="selectFlightPermissionVo"/>
+        where p.application_id = #{applicationId} limit 1
+    </select>
+
+    <insert id="insertFlightPermission" parameterType="com.ruoyi.system.domain.FlightPermission" useGeneratedKeys="true" keyProperty="id">
+        insert into flight_permission (
+            application_id, approved_area, approved_height, approved_start_time, approved_end_time,
+            permission_status, create_by, remark, create_time
+        ) values (
+            #{applicationId}, #{approvedArea}, #{approvedHeight}, #{approvedStartTime}, #{approvedEndTime},
+            #{permissionStatus}, #{createBy}, #{remark}, sysdate()
+        )
+    </insert>
+
+    <update id="updateFlightPermission" parameterType="com.ruoyi.system.domain.FlightPermission">
+        update flight_permission
+        <set>
+            <if test="approvedArea != null">approved_area = #{approvedArea},</if>
+            <if test="approvedHeight != null">approved_height = #{approvedHeight},</if>
+            <if test="approvedStartTime != null">approved_start_time = #{approvedStartTime},</if>
+            <if test="approvedEndTime != null">approved_end_time = #{approvedEndTime},</if>
+            <if test="permissionStatus != null">permission_status = #{permissionStatus},</if>
+            <if test="updateBy != null and updateBy != ''">update_by = #{updateBy},</if>
+            <if test="remark != null">remark = #{remark},</if>
+            update_time = sysdate()
+        </set>
+        where id = #{id}
+    </update>
+
+    <delete id="deleteFlightPermissionById" parameterType="Long">
+        delete from flight_permission where id = #{id}
+    </delete>
+
+    <delete id="deleteFlightPermissionByIds" parameterType="Long">
+        delete from flight_permission where id in
+        <foreach item="id" collection="array" open="(" separator="," close=")">
+            #{id}
+        </foreach>
+    </delete>
+</mapper>

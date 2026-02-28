@@ -1,0 +1,108 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.ruoyi.system.mapper.DroneInfoMapper">
+
+    <resultMap type="com.ruoyi.system.domain.DroneInfo" id="DroneInfoResult">
+        <id     property="id"           column="id"             />
+        <result property="droneName"     column="drone_name"     />
+        <result property="droneModel"   column="drone_model"    />
+        <result property="serialNumber" column="serial_number"  />
+        <result property="ownerId"      column="owner_id"       />
+        <result property="status"      column="status"         />
+        <result property="createBy"     column="create_by"      />
+        <result property="createTime"   column="create_time"   />
+        <result property="updateBy"     column="update_by"     />
+        <result property="updateTime"   column="update_time"   />
+        <result property="remark"       column="remark"         />
+    </resultMap>
+
+    <sql id="selectDroneInfoVo">
+        select id, drone_name, drone_model, serial_number, owner_id, status, create_by, create_time, update_by, update_time, remark
+        from drone_info
+    </sql>
+
+    <select id="selectDroneInfoById" parameterType="Long" resultMap="DroneInfoResult">
+        <include refid="selectDroneInfoVo"/>
+        where id = #{id}
+    </select>
+
+    <select id="selectDroneInfoList" parameterType="com.ruoyi.system.domain.DroneInfo" resultMap="DroneInfoResult">
+        <include refid="selectDroneInfoVo"/>
+        <where>
+            <if test="droneName != null and droneName != ''">
+                AND drone_name like concat('%', #{droneName}, '%')
+            </if>
+            <if test="droneModel != null and droneModel != ''">
+                AND drone_model like concat('%', #{droneModel}, '%')
+            </if>
+            <if test="serialNumber != null and serialNumber != ''">
+                AND serial_number = #{serialNumber}
+            </if>
+            <if test="ownerId != null">
+                AND owner_id = #{ownerId}
+            </if>
+            <if test="status != null and status != ''">
+                AND status = #{status}
+            </if>
+            <if test="params.beginTime != null and params.beginTime != ''">
+                AND date_format(create_time,'%Y%m%d') &gt;= date_format(#{params.beginTime},'%Y%m%d')
+            </if>
+            <if test="params.endTime != null and params.endTime != ''">
+                AND date_format(create_time,'%Y%m%d') &lt;= date_format(#{params.endTime},'%Y%m%d')
+            </if>
+        </where>
+    </select>
+
+    <select id="checkSerialNumberUnique" parameterType="String" resultMap="DroneInfoResult">
+        <include refid="selectDroneInfoVo"/>
+        where serial_number = #{serialNumber} limit 1
+    </select>
+
+    <insert id="insertDroneInfo" parameterType="com.ruoyi.system.domain.DroneInfo" useGeneratedKeys="true" keyProperty="id">
+        insert into drone_info (
+            <if test="droneName != null and droneName != ''">drone_name,</if>
+            <if test="droneModel != null">drone_model,</if>
+            <if test="serialNumber != null and serialNumber != ''">serial_number,</if>
+            <if test="ownerId != null">owner_id,</if>
+            <if test="status != null">status,</if>
+            <if test="createBy != null and createBy != ''">create_by,</if>
+            <if test="remark != null">remark,</if>
+            create_time
+        ) values (
+            <if test="droneName != null and droneName != ''">#{droneName},</if>
+            <if test="droneModel != null">#{droneModel},</if>
+            <if test="serialNumber != null and serialNumber != ''">#{serialNumber},</if>
+            <if test="ownerId != null">#{ownerId},</if>
+            <if test="status != null">#{status},</if>
+            <if test="createBy != null and createBy != ''">#{createBy},</if>
+            <if test="remark != null">#{remark},</if>
+            sysdate()
+        )
+    </insert>
+
+    <update id="updateDroneInfo" parameterType="com.ruoyi.system.domain.DroneInfo">
+        update drone_info
+        <set>
+            <if test="droneName != null and droneName != ''">drone_name = #{droneName},</if>
+            <if test="droneModel != null">drone_model = #{droneModel},</if>
+            <if test="serialNumber != null and serialNumber != ''">serial_number = #{serialNumber},</if>
+            <if test="ownerId != null">owner_id = #{ownerId},</if>
+            <if test="status != null">status = #{status},</if>
+            <if test="updateBy != null and updateBy != ''">update_by = #{updateBy},</if>
+            <if test="remark != null">remark = #{remark},</if>
+            update_time = sysdate()
+        </set>
+        where id = #{id}
+    </update>
+
+    <delete id="deleteDroneInfoById" parameterType="Long">
+        delete from drone_info where id = #{id}
+    </delete>
+
+    <delete id="deleteDroneInfoByIds" parameterType="Long">
+        delete from drone_info where id in
+        <foreach item="id" collection="array" open="(" separator="," close=")">
+            #{id}
+        </foreach>
+    </delete>
+</mapper>
