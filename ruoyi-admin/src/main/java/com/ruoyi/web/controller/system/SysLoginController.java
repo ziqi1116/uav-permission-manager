@@ -1,5 +1,6 @@
 package com.ruoyi.web.controller.system;
 
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 import java.util.Set;
@@ -100,9 +101,21 @@ public class SysLoginController
     @GetMapping("getRouters")
     public AjaxResult getRouters()
     {
-        Long userId = SecurityUtils.getUserId();
-        List<SysMenu> menus = menuService.selectMenuTreeByUserId(userId);
-        return AjaxResult.success(menuService.buildMenus(menus));
+        try
+        {
+            Long userId = SecurityUtils.getUserId();
+            if (userId == null)
+            {
+                return AjaxResult.success(new ArrayList<>());
+            }
+            List<SysMenu> menus = menuService.selectMenuTreeByUserId(userId);
+            return AjaxResult.success(menuService.buildMenus(menus));
+        }
+        catch (Exception e)
+        {
+            org.slf4j.LoggerFactory.getLogger(getClass()).error("getRouters failed, return empty routers", e);
+            return AjaxResult.success(new ArrayList<>());
+        }
     }
     
     // 检查初始密码是否提醒修改
