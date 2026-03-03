@@ -111,9 +111,9 @@ public class SysLoginController
             List<SysMenu> menus = menuService.selectMenuTreeByUserId(userId);
             return AjaxResult.success(menuService.buildMenus(menus));
         }
-        catch (Exception e)
+        catch (NullPointerException e)
         {
-            org.slf4j.LoggerFactory.getLogger(getClass()).error("getRouters failed, return empty routers", e);
+            org.slf4j.LoggerFactory.getLogger(getClass()).error("getRouters NPE, return empty routers", e);
             return AjaxResult.success(new ArrayList<>());
         }
     }

@@ -39,8 +39,10 @@ const permission = {
           const sidebarRoutes = filterAsyncRouter(sdata)
           const rewriteRoutes = filterAsyncRouter(rdata, false, true)
           const asyncRoutes = filterDynamicRoutes(dynamicRoutes)
-          rewriteRoutes.push({ path: '*', redirect: '/404', hidden: true })
+          // 先添加后端返回的菜单路由（含首页、无人机等），再添加静态动态路由，最后 404 兜底
+          router.addRoutes(rewriteRoutes)
           router.addRoutes(asyncRoutes)
+          router.addRoutes([{ path: '*', redirect: '/404', hidden: true }])
           commit('SET_ROUTES', rewriteRoutes)
           commit('SET_SIDEBAR_ROUTERS', constantRoutes.concat(sidebarRoutes))
           commit('SET_DEFAULT_ROUTES', sidebarRoutes)

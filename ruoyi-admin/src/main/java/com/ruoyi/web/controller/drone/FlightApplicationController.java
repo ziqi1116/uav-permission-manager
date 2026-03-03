@@ -73,7 +73,11 @@ public class FlightApplicationController extends BaseController {
     @Log(title = "飞行申请", businessType = BusinessType.INSERT)
     @PostMapping
     public AjaxResult add(@Validated @RequestBody FlightApplication flightApplication) {
-        flightApplication.setApplicantId(getUserId());
+        Long userId = getUserId();
+        if (userId == null) {
+            return error("请先登录");
+        }
+        flightApplication.setApplicantId(userId);
         flightApplication.setCreateBy(getUsername());
         return toAjax(flightApplicationService.insertFlightApplication(flightApplication));
     }

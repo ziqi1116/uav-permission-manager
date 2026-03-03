@@ -73,7 +73,7 @@ public class FlightApplication extends BaseEntity {
     public String getApplicationNo() { return applicationNo; }
     public void setApplicationNo(String applicationNo) { this.applicationNo = applicationNo; }
 
-    @NotNull(message = "申请人不能为空")
+    /** 申请人由后端从当前登录用户填充，前端不传，不做 @NotNull 校验 */
     public Long getApplicantId() { return applicantId; }
     public void setApplicantId(Long applicantId) { this.applicantId = applicantId; }
 

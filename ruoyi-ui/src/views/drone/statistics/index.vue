@@ -1,5 +1,17 @@
 <template>
   <div class="statistics-dashboard">
+    <!-- 无数据时提示 -->
+    <el-alert
+      v-if="isEmpty"
+      type="info"
+      :closable="false"
+      show-icon
+      class="empty-hint"
+    >
+      <template slot="title">
+        暂无数据。普通用户仅显示本人相关统计，您可前往左侧 <strong>「飞行申请」</strong> 提交申请，审批通过后数据将在此展示。
+      </template>
+    </el-alert>
     <!-- 顶部：4 个统计卡片 -->
     <div class="dashboard-cards">
       <div class="card-item">
@@ -60,7 +72,15 @@ export default {
       chartApplication: null,
       chartArea: null,
       chartViolation: null,
-      resizeHandler: null
+      resizeHandler: null,
+      hasLoaded: false
+    }
+  },
+  computed: {
+    isEmpty() {
+      if (!this.hasLoaded) return false
+      const s = this.stats
+      return (s.todayApplicationCount || 0) + (s.todayApprovedCount || 0) + (s.currentFlightCount || 0) + (s.totalViolationCount || 0) === 0
     }
   },
   mounted() {
@@ -90,6 +110,7 @@ export default {
       const end = today.toISOString().slice(0, 10)
       const begin = new Date(today.getTime() - 30 * 24 * 60 * 60 * 1000).toISOString().slice(0, 10)
       getDashboard(begin, end).then(res => {
+        this.hasLoaded = true
         const data = res.data || {}
         const ds = data.dashboardStats || {}
         this.stats = {
@@ -102,6 +123,7 @@ export default {
         this.renderArea(data.areaUsage || [])
         this.renderViolation(data.violationCount || [])
       }).catch(() => {
+        this.hasLoaded = true
         this.renderApplication([])
         this.renderArea([])
         this.renderViolation([])
@@ -152,6 +174,10 @@ export default {
   box-sizing: border-box;
   background: #f0f2f5;
   overflow: auto;
+}
+.empty-hint {
+  margin-bottom: 16px;
+  flex-shrink: 0;
 }
 .dashboard-cards {
   display: flex;

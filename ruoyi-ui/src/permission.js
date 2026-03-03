@@ -31,10 +31,9 @@ router.beforeEach((to, from, next) => {
         // 判断当前用户是否已拉取完user_info信息
         store.dispatch('GetInfo').then(() => {
           isRelogin.show = false
-          store.dispatch('GenerateRoutes').then(accessRoutes => {
-            // 根据roles权限生成可访问的路由表
-            router.addRoutes(accessRoutes) // 动态添加可访问路由表
-            next({ ...to, replace: true }) // hack方法 确保addRoutes已完成
+          store.dispatch('GenerateRoutes').then(() => {
+            // 可访问路由表已在 GenerateRoutes 内通过 addRoutes 添加（含后端菜单与 404 兜底）
+            next({ ...to, replace: true }) // 重新进入守卫以匹配新路由
           })
         }).catch(err => {
             store.dispatch('LogOut').then(() => {
