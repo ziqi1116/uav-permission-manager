@@ -279,7 +279,34 @@ public class SysUserServiceImpl implements ISysUserService
     @Override
     public boolean registerUser(SysUser user)
     {
-        return userMapper.insertUser(user) > 0;
+        int rows = userMapper.insertUser(user);
+        if (rows <= 0)
+        {
+            return false;
+        }
+
+        // 注册用户默认启用状态
+        if (StringUtils.isEmpty(user.getStatus()))
+        {
+            user.setStatus("0");
+        }
+
+        // 注册成功后，自动绑定 drone_user 角色（如存在）
+        SysRole queryRole = new SysRole();
+        queryRole.setRoleKey("drone_user");
+        queryRole.setStatus("0");
+        List<SysRole> roleList = roleMapper.selectRoleList(queryRole);
+        if (!CollectionUtils.isEmpty(roleList))
+        {
+            Long userId = user.getUserId();
+            if (userId != null)
+            {
+                Long[] roleIds = new Long[] { roleList.get(0).getRoleId() };
+                insertUserRole(userId, roleIds);
+            }
+        }
+
+        return true;
     }
 
     /**

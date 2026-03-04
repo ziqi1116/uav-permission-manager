@@ -7,6 +7,11 @@
           <svg-icon slot="prefix" icon-class="user" class="el-input__icon input-icon" />
         </el-input>
       </el-form-item>
+      <el-form-item prop="nickName">
+        <el-input v-model="registerForm.nickName" type="text" auto-complete="off" placeholder="昵称">
+          <svg-icon slot="prefix" icon-class="user" class="el-input__icon input-icon" />
+        </el-input>
+      </el-form-item>
       <el-form-item prop="password">
         <el-input
           v-model="registerForm.password"
@@ -86,6 +91,7 @@ export default {
       codeUrl: "",
       registerForm: {
         username: "",
+        nickName: "",
         password: "",
         confirmPassword: "",
         code: "",
@@ -95,6 +101,10 @@ export default {
         username: [
           { required: true, trigger: "blur", message: "请输入您的账号" },
           { min: 2, max: 20, message: '用户账号长度必须介于 2 和 20 之间', trigger: 'blur' }
+        ],
+        nickName: [
+          { required: true, trigger: "blur", message: "请输入您的昵称" },
+          { min: 2, max: 30, message: '用户昵称长度必须介于 2 和 30 之间', trigger: 'blur' }
         ],
         password: [
           { required: true, trigger: "blur", message: "请输入您的密码" },

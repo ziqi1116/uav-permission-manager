@@ -76,7 +76,8 @@ public class SysRegisterService
         }
         else
         {
-            sysUser.setNickName(username);
+            String nickName = registerBody.getNickName();
+            sysUser.setNickName(StringUtils.isNotEmpty(nickName) ? nickName : username);
             sysUser.setPwdUpdateDate(DateUtils.getNowDate());
             sysUser.setPassword(SecurityUtils.encryptPassword(password));
             boolean regFlag = userService.registerUser(sysUser);
