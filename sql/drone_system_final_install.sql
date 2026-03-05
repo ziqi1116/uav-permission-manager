@@ -245,9 +245,9 @@ INSERT INTO sys_menu (menu_name, parent_id, order_num, path, component, query, r
 ON DUPLICATE KEY UPDATE menu_name = VALUES(menu_name);
 
 INSERT INTO sys_menu (menu_name, parent_id, order_num, path, component, query, route_name, is_frame, is_cache, menu_type, visible, status, perms, icon, create_by, create_time, remark) VALUES
-('监控管理', @parent_id, 5, 'monitor', 'drone/monitor/index', '', '', 1, 0, 'C', '0', '0', 'drone:monitor:list', 'monitor', 'admin', sysdate(), '')
+('监控管理', @parent_id, 5, 'flightMonitor', 'drone/monitor/index', '', '', 1, 0, 'C', '0', '0', 'drone:monitor:list', 'monitor', 'admin', sysdate(), '')
 ON DUPLICATE KEY UPDATE menu_name = VALUES(menu_name);
-SET @monitor_menu = (SELECT menu_id FROM sys_menu WHERE path = 'monitor' AND (parent_id = @parent_id OR parent_id = 0) LIMIT 1);
+SET @monitor_menu = (SELECT menu_id FROM sys_menu WHERE path = 'flightMonitor' AND (parent_id = @parent_id OR parent_id = 0) LIMIT 1);
 INSERT INTO sys_menu (menu_name, parent_id, order_num, path, component, query, route_name, is_frame, is_cache, menu_type, visible, status, perms, icon, create_by, create_time, remark) VALUES
 ('监控查询', @monitor_menu, 1, '', '', '', '', 1, 0, 'F', '0', '0', 'drone:monitor:query', '#', 'admin', sysdate(), ''),
 ('监控新增', @monitor_menu, 2, '', '', '', '', 1, 0, 'F', '0', '0', 'drone:monitor:add', '#', 'admin', sysdate(), ''),
@@ -274,7 +274,7 @@ SET parent_id = 0,
                   WHEN 'application' THEN 2
                   WHEN 'approve'    THEN 3
                   WHEN 'permission' THEN 4
-                  WHEN 'monitor'    THEN 5
+                  WHEN 'flightMonitor' THEN 5
                   WHEN 'violation'  THEN 6
                   ELSE order_num
                 END
@@ -298,7 +298,7 @@ SET @rid = (SELECT role_id FROM sys_role WHERE role_key = 'drone_user' LIMIT 1);
 SET @mid_droneInfo   = (SELECT menu_id FROM sys_menu WHERE path = 'droneInfo' AND menu_type IN ('C','M') LIMIT 1);
 SET @mid_application = (SELECT menu_id FROM sys_menu WHERE path = 'application' AND menu_type IN ('C','M') LIMIT 1);
 SET @mid_permission  = (SELECT menu_id FROM sys_menu WHERE path = 'permission' AND menu_type IN ('C','M') LIMIT 1);
-SET @mid_monitor     = (SELECT menu_id FROM sys_menu WHERE path = 'monitor' AND menu_type IN ('C','M') LIMIT 1);
+SET @mid_monitor     = (SELECT menu_id FROM sys_menu WHERE path = 'flightMonitor' AND menu_type IN ('C','M') LIMIT 1);
 
 -- 先清空 drone_user 旧菜单，再赋予本系统所需最小权限
 DELETE FROM sys_role_menu WHERE role_id = @rid;
@@ -394,6 +394,11 @@ INSERT INTO sys_config (config_name, config_key, config_value, config_type, crea
 SELECT '账号自助注册开启', 'sys.account.registerUser', 'true', 'Y', 'admin', sysdate(), '是否开启账号自助注册'
 FROM (SELECT 1) t WHERE NOT EXISTS (SELECT 1 FROM sys_config WHERE config_key = 'sys.account.registerUser');
 UPDATE sys_config SET config_value = 'true' WHERE config_key = 'sys.account.registerUser';
+
+-- =============================================================================
+-- 十、监控管理 path 修复（避免与若依「系统监控」path=monitor 冲突，导致 404）
+-- =============================================================================
+UPDATE sys_menu SET path = 'flightMonitor' WHERE path = 'monitor' AND component = 'drone/monitor/index';
 
 -- =============================================================================
 -- 结束。执行顺序建议：
